@@ -1,61 +1,26 @@
-// server.js
+var express = require('express'),
+    app = express(),
+    port = process.env.PORT || 3000;
+var mongoose = require('mongoose')
+Task = require('./models/todoListModel'), //created model loading here
+bodyParser = require('body-parser');
 
-// set up ======================================================================
-// get all the tools we need
-var express  = require('express');
-var engine = require('ejs-locals');
-var app      = express();
-var port     = process.env.PORT || 8080;
-var mongoose = require('mongoose');
-var passport = require('passport');
-var flash    = require('connect-flash');
-var path     = require('path');
+// mongoose instance connection url connection
+mongoose.Promise = global.Promise;
+mongoose.connect('mongodb://amills:pass1234@cluster-shard-00-00-6ezzw.azure.mongodb.net:27017,cluster-shard-00-01-6ezzw.azure.mongodb.net:27017,cluster-shard-00-02-6ezzw.azure.mongodb.net:27017/test?ssl=true&replicaSet=Cluster-shard-0&authSource=admin&retryWrites=true&w=majority', {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+}); 
 
-var morgan       = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser   = require('body-parser');
-var session      = require('express-session');
 
-var configDB = require('./config/database.js');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
-// configuration ===============================================================
-//mongoose.connect(configDB.url); // connect to our database
 
-require('./config/passport')(passport); // pass passport for configuration
+var routes = require('./routes/todoListRoutes'); //importing route
+routes(app); //register the route
 
-// set up our express application
-app.use(morgan('dev')); // log every request to the console
-app.use(cookieParser()); // read cookies (needed for auth)
-app.use(bodyParser()); // get information from html forms
 
-//app.set('view engine', 'ejs'); // set up ejs for templating
-app.engine('ejs',engine);
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs'); // set up ejs for templating
-
-//setting up a static directory for stylesheets, imags, and javascript
-
-app.use(express.static('public'));
-// required for passport
-//app.use(session({ secret: 'ilovescotchscotchyscotchscotch' })); // session secret
-
-app.use(session({
-  cookieName: 'session',
-  secret: 'beelinerocks',
-  duration: 30 * 60 * 1000,
-  activeDuration: 5 * 60 * 1000,
-  httpOnly: true,
-  secure: true,
-  ephemeral: true
-}));
-
-app.use(passport.initialize());
-app.use(passport.session()); // persistent login sessions
-app.use(flash()); // use connect-flash for flash messages stored in session
-
-// routes ======================================================================
-require('./app/routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
-
-// launch ======================================================================
 app.listen(port);
-console.log('The magic happens on port ' + port);
+
+console.log('todo list RESTful API server started on: ' + port);
